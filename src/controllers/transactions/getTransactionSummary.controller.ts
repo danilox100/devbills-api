@@ -27,7 +27,6 @@ export const getTransactionSummary = async (
     return;
   }
 
-  // ✅ CORRIGIDO (toDate)
   const startDate = dayjs.utc(`${year}-${month}-01`).startOf('month').toDate();
 
   const endDate = dayjs.utc(startDate).endOf('month').toDate();
@@ -70,7 +69,6 @@ export const getTransactionSummary = async (
       }
     }
 
-    // ✅ Calcula porcentagem corretamente
     const expensesByCategory = Array.from(groupedExpenses.values())
       .map((entry) => ({
         ...entry,
@@ -83,7 +81,6 @@ export const getTransactionSummary = async (
       }))
       .sort((a, b) => b.amount - a.amount);
 
-    // ✅ Summary final
     const summary: TransactionSummary = {
       totalExpenses,
       totalIncomes,

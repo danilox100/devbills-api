@@ -2,10 +2,8 @@
   "compilerOptions": {
     "target": "ES2020", // Transpila para uma versão moderna do JavaScript (ES2021)
     "module": "commonjs", // Usa o sistema de módulos CommonJS, necessário para Node.js
-    "moduleResolution": "node", // Resolve os imports como o Node faz, buscando em node_modules
-    "lib": [
-      "ES2020"
-    ], // Permite usar funcionalidades da linguagem baseadas no ES2021
+    "moduleResolution": "bundler", // Resolve os imports como o Node faz, buscando em node_modules
+    "lib": ["ES2020"], // Permite usar funcionalidades da linguagem baseadas no ES2021
     "rootDir": "src", // Diretório onde está o código-fonte (entrada)
     "outDir": "dist", // Diretório onde os arquivos compilados serão salvos (saída)
     "resolveJsonModule": true, // Permite importar arquivos .json como módulos (útil para config, Firebase etc)
@@ -17,11 +15,6 @@
     "noFallthroughCasesInSwitch": true, // Impede erros ao esquecer de usar `break` nos `case` de `switch`
     "noImplicitOverride": true // Garante que ao sobrescrever métodos, você use a palavra-chave `override` (mais seguro)
   },
-  "include": [
-    "src"
-  ], // Apenas os arquivos dentro da pasta `src` serão analisados
-  "exclude": [
-    "node_modules",
-    "dist"
-  ] // Ignora essas pastas durante a compilação
+  "include": ["src"], // Apenas os arquivos dentro da pasta `src` serão analisados
+  "exclude": ["node_modules", "dist"] // Ignora essas pastas durante a compilação
 }
