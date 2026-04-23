@@ -7,7 +7,6 @@ export const authMiddleware = async (
 ): Promise<void> => {
   const authHeader = request.headers.authorization;
 
-  // 🔍 DEBUG COMPLETO
   console.log('====================');
   console.log('HEADER RAW:', authHeader);
 
@@ -46,15 +45,15 @@ export const authMiddleware = async (
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
 
+    // 🔥 ESSENCIAL — agora o controller vai funcionar
+    request.userId = decodedToken.uid;
+
     console.log('✅ TOKEN VÁLIDO');
     console.log('USER UID:', decodedToken.uid);
-
-    // opcional: anexar no request
-    (request as any).user = decodedToken;
   } catch (err) {
     console.error('❌ ERRO AO VALIDAR TOKEN:', err);
-
     await reply.code(401).send({ error: 'Invalid token' });
+    return;
   }
 
   console.log('====================');

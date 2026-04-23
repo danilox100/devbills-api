@@ -11,11 +11,10 @@ export const getTransactions = async (
   request: FastifyRequest<{ Querystring: GetTransactionQuery }>,
   reply: FastifyReply,
 ): Promise<void> => {
-  const userId = 'FEhdush3$#$#$@';
+  const userId = request.userId;
 
   if (!userId) {
     reply.status(401).send({ error: 'Usuário não autenticado' });
-
     return;
   }
 
@@ -28,7 +27,9 @@ export const getTransactions = async (
       .utc(`${year}-${month}-01`)
       .startOf('month')
       .toDate();
+
     const endDate = dayjs.utc(startDate).endOf('month').toDate();
+
     filters.date = { gte: startDate, lte: endDate };
   }
 
@@ -57,7 +58,7 @@ export const getTransactions = async (
 
     reply.send(transactions);
   } catch (err) {
-    request.log.error('Erro ao trazer transações');
+    request.log.error(err);
     reply.status(500).send({ error: 'Erro do servidor' });
   }
 };

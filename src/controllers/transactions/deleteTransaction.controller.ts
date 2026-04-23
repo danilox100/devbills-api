@@ -6,11 +6,11 @@ export const deleteTransaction = async (
   request: FastifyRequest<{ Params: DeleteTransactionParams }>,
   reply: FastifyReply,
 ): Promise<void> => {
-  const userId = 'FEhdush3$#$#$@';
-  const { id } = request.params;
+  const userId = request.userId;
+  const { id } = request.params; // 🔥 CORRETO
 
   if (!userId) {
-    reply.send(401).send({ error: 'Usuário não autenticado' });
+    reply.status(401).send({ error: 'Usuário não autenticado' });
     return;
   }
 
@@ -23,15 +23,17 @@ export const deleteTransaction = async (
     });
 
     if (!transaction) {
-      reply.status(400).send({ error: 'ID da transação inválido' });
+      reply.status(404).send({ error: 'Transação não encontrada' });
       return;
     }
 
-    await prisma.transaction.delete({ where: { id } });
+    await prisma.transaction.delete({
+      where: { id },
+    });
 
     reply.status(200).send({ message: 'Transação deletada com sucesso' });
   } catch (err) {
-    request.log.error({ message: 'Erro ao deletar transação' });
+    request.log.error(err);
     reply
       .status(500)
       .send({ error: 'Erro interno do servidor, falha ao deletar transação' });
