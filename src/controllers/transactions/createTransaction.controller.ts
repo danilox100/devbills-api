@@ -1,5 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+
 import prisma from '../../config/prisma';
+
 import { createTransactionSchema } from '../../schemas/transaction.schema';
 
 const createTransaction = async (
@@ -9,7 +11,9 @@ const createTransaction = async (
   const userId = request.userId;
 
   if (!userId) {
-    reply.status(401).send({ error: 'Usuário não autenticado' });
+    reply.status(401).send({
+      error: 'Usuário não autenticado',
+    });
 
     return;
   }
@@ -17,9 +21,13 @@ const createTransaction = async (
   const result = createTransactionSchema.safeParse(request.body);
 
   if (!result.success) {
-    const errorMessage = result.error.issues[0].message || 'Validação Invalida';
+    const errorMessage = result.error.issues[0].message || 'Validação inválida';
 
-    return reply.status(400).send({ error: errorMessage });
+    reply.status(400).send({
+      error: errorMessage,
+    });
+
+    return;
   }
 
   const transaction = result.data;
@@ -33,11 +41,19 @@ const createTransaction = async (
     });
 
     if (!category) {
-      reply.status(400).send({ error: 'Categoria Invalida' });
+      reply.status(400).send({
+        error: 'Categoria inválida',
+      });
+
       return;
     }
 
+    /**
+     * CORREÇÃO DE TIMEZONE
+     */
     const parsedDate = new Date(transaction.date);
+
+    parsedDate.setHours(12, 0, 0, 0);
 
     const newTransaction = await prisma.transaction.create({
       data: {
@@ -52,8 +68,11 @@ const createTransaction = async (
 
     reply.status(201).send(newTransaction);
   } catch (err) {
-    request.log.error('Erro ao criar transação');
-    reply.status(500).send({ error: 'Erro interno do servidor' });
+    request.log.error(err, 'Erro ao criar transação');
+
+    reply.status(500).send({
+      error: 'Erro interno do servidor',
+    });
   }
 };
 

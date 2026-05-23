@@ -1,35 +1,46 @@
 import { TransactionType } from '@prisma/client';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+
 import prisma from '../../config/prisma';
+
 import type { GetTransactionSummaryQuery } from '../../schemas/transaction.schema';
+
 import type { CategorySummary } from '../../types/category.type';
 import type { TransactionSummary } from '../../types/transaction.type';
 
-dayjs.extend(utc);
-
 export const getTransactionSummary = async (
-  request: FastifyRequest<{ Querystring: GetTransactionSummaryQuery }>,
+  request: FastifyRequest<{
+    Querystring: GetTransactionSummaryQuery;
+  }>,
   reply: FastifyReply,
 ): Promise<void> => {
-  const userId = 'FEhdush3$#$#$@';
+  const userId = request.userId;
 
   if (!userId) {
-    reply.status(401).send({ error: 'Usuário não autenticado' });
+    reply.status(401).send({
+      error: 'Usuário não autenticado',
+    });
+
     return;
   }
 
-  const { month, year } = request.query;
+  const monthNumber = Number(request.query.month);
+  const yearNumber = Number(request.query.year);
 
-  if (!month || !year) {
-    reply.status(400).send({ error: 'Mês e ano são obrigatórios' });
+  if (!monthNumber || !yearNumber) {
+    reply.status(400).send({
+      error: 'Mês e ano inválidos',
+    });
+
     return;
   }
 
-  const startDate = dayjs.utc(`${year}-${month}-01`).startOf('month').toDate();
+  /**
+   * RANGE DO MÊS
+   */
+  const startDate = new Date(yearNumber, monthNumber - 1, 1);
 
-  const endDate = dayjs.utc(startDate).endOf('month').toDate();
+  const endDate = new Date(yearNumber, monthNumber, 1);
 
   try {
     const transactions = await prisma.transaction.findMany({
@@ -37,21 +48,26 @@ export const getTransactionSummary = async (
         userId,
         date: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
       },
-      orderBy: { date: 'desc' },
       include: {
         category: true,
+      },
+      orderBy: {
+        date: 'desc',
       },
     });
 
     let totalExpenses = 0;
     let totalIncomes = 0;
+
     const groupedExpenses = new Map<string, CategorySummary>();
 
     for (const transaction of transactions) {
       if (transaction.type === TransactionType.expense) {
+        totalExpenses += transaction.amount;
+
         const existing = groupedExpenses.get(transaction.categoryId) ?? {
           categoryId: transaction.categoryId,
           categoryName: transaction.category.name,
@@ -61,9 +77,8 @@ export const getTransactionSummary = async (
         };
 
         existing.amount += transaction.amount;
-        groupedExpenses.set(transaction.categoryId, existing);
 
-        totalExpenses += transaction.amount;
+        groupedExpenses.set(transaction.categoryId, existing);
       } else {
         totalIncomes += transaction.amount;
       }
@@ -74,9 +89,7 @@ export const getTransactionSummary = async (
         ...entry,
         percentage:
           totalExpenses > 0
-            ? Number.parseFloat(
-                ((entry.amount / totalExpenses) * 100).toFixed(2),
-              )
+            ? Number(((entry.amount / totalExpenses) * 100).toFixed(2))
             : 0,
       }))
       .sort((a, b) => b.amount - a.amount);
@@ -88,9 +101,12 @@ export const getTransactionSummary = async (
       expensesByCategory,
     };
 
-    reply.send(summary);
+    return reply.status(200).send(summary);
   } catch (err) {
-    request.log.error(err, 'Erro ao trazer transações');
-    reply.status(500).send({ error: 'Erro do servidor' });
+    request.log.error(err);
+
+    return reply.status(500).send({
+      error: 'Erro interno do servidor',
+    });
   }
 };
